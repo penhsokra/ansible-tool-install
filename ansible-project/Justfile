@@ -1,0 +1,40 @@
+# Justfile for managing Ansible Playbook execution
+
+default:
+    @just --list
+
+# Check playbook syntax
+syntax-check:
+    ANSIBLE_ROLES_PATH=./roles ansible-playbook --syntax-check playbooks/site.yml
+
+# Ping all hosts in SIT inventory
+ping-sit *args:
+    ansible all -m ping -i inventory/sit.ini {{args}}
+
+# Ping all hosts in UAT inventory
+ping-uat *args:
+    ansible all -m ping -i inventory/uat.ini {{args}}
+
+# Ping all hosts in PROD inventory
+ping-prod *args:
+    ansible all -m ping -i inventory/prod.ini {{args}}
+
+# Deploy to SIT environment
+deploy-sit *args:
+    ansible-playbook -i inventory/sit.ini playbooks/site.yml {{args}}
+
+# Deploy to UAT environment
+deploy-uat *args:
+    ansible-playbook -i inventory/uat.ini playbooks/site.yml {{args}}
+
+# Deploy to PROD environment
+deploy-prod *args:
+    ansible-playbook -i inventory/prod.ini playbooks/site.yml {{args}}
+
+# Deploy to all environments (SIT, UAT, PROD) in parallel
+deploy-all *args:
+    just deploy-sit {{args}} & \
+    just deploy-uat {{args}} & \
+    just deploy-prod {{args}} & \
+    wait
+

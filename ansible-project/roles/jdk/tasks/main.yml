@@ -1,0 +1,62 @@
+---
+- name: Set JDK variables dynamically
+  set_fact:
+    jdk_url: "{{ jdk_versions[jdk_version].url }}"
+    jdk_path: "{{ jdk_versions[jdk_version].path }}"
+
+- name: Check if Java binary already exists
+  stat:
+    path: "{{ jdk_path }}/bin/java"
+  register: jdk_bin_stat
+
+- name: Wipe existing directory if binary is missing (ensures clean install)
+  file:
+    path: "{{ jdk_path }}"
+    state: absent
+  when: not jdk_bin_stat.stat.exists
+
+- name: Create JDK directory
+  file:
+    path: "{{ jdk_path }}"
+    state: directory
+
+- name: Download JDK
+  get_url:
+    url: "{{ jdk_url }}"
+    dest: "/tmp/jdk.tar.gz"
+
+- name: Extract JDK
+  unarchive:
+    src: "/tmp/jdk.tar.gz"
+    dest: "{{ jdk_path }}"
+    remote_src: yes
+    extra_opts:
+      - --strip-components=1
+
+- name: Set System-Wide JAVA_HOME and PATH
+  copy:
+    dest: /etc/profile.d/jdk.sh
+    content: |
+      export JAVA_HOME={{ jdk_path }}
+      export PATH=$PATH:{{ jdk_path }}/bin
+    mode: '0644'
+
+- name: Clean up temporary downloaded archive
+  file:
+    path: "/tmp/jdk.tar.gz"
+    state: absent
+
+- name: Verify JDK Installation
+  command: "{{ jdk_path }}/bin/java -version"
+  register: java_verify
+  changed_when: false
+
+- name: Display JDK installation status
+  debug:
+    msg: "JDK Installation verified successfully. Version output: {{ java_verify.stderr }}"
+
+- name: Remove legacy user-specific JAVA_HOME configurations
+  blockinfile:
+    path: /home/penhsokra/.profile
+    state: absent
+  ignore_errors: yes

@@ -1,0 +1,7 @@
+- name: Dynamic Dev Tools Setup
+  hosts: all
+  become: yes
+
+  roles:
+    - jdk
+    - maven

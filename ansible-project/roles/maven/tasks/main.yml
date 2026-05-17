@@ -1,0 +1,59 @@
+---
+- name: Set Maven variables dynamically
+  set_fact:
+    maven_url: "{{ maven_versions[maven_version].url }}"
+    maven_path: "{{ maven_versions[maven_version].path }}"
+
+- name: Check if Maven binary already exists
+  stat:
+    path: "{{ maven_path }}/bin/mvn"
+  register: maven_bin_stat
+
+- name: Wipe existing directory if binary is missing (ensures clean install)
+  file:
+    path: "{{ maven_path }}"
+    state: absent
+  when: not maven_bin_stat.stat.exists
+
+- name: Create Maven directory
+  file:
+    path: "{{ maven_path }}"
+    state: directory
+
+- name: Download Maven
+  get_url:
+    url: "{{ maven_url }}"
+    dest: /tmp/maven.tar.gz
+
+- name: Extract Maven using tar command
+  command: "tar -xzf /tmp/maven.tar.gz -C {{ maven_path }} --strip-components=1"
+  args:
+    creates: "{{ maven_path }}/bin/mvn"
+
+- name: Set System-Wide MAVEN_HOME and PATH
+  copy:
+    dest: /etc/profile.d/maven.sh
+    content: |
+      export MAVEN_HOME={{ maven_path }}
+      export PATH=$PATH:{{ maven_path }}/bin
+    mode: '0644'
+
+- name: Clean up temporary downloaded archive
+  file:
+    path: "/tmp/maven.tar.gz"
+    state: absent
+
+- name: Verify Maven Installation
+  command: "{{ maven_path }}/bin/mvn -version"
+  register: mvn_verify
+  changed_when: false
+
+- name: Display Maven installation status
+  debug:
+    msg: "Maven Installation verified successfully. Version output: {{ mvn_verify.stdout }}"
+
+- name: Remove legacy user-specific MAVEN_HOME configurations
+  blockinfile:
+    path: /home/penhsokra/.profile
+    state: absent
+  ignore_errors: yes

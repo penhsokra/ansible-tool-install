@@ -1,0 +1,13 @@
+---
+jdk_versions:
+  "11":
+    url: "https://github.com/adoptium/temurin11-binaries/releases/download/jdk-11.0.22%2B7/OpenJDK11U-jdk_x64_linux_hotspot_11.0.22_7.tar.gz"
+    path: "/opt/jdk11"
+
+  "17":
+    url: "https://github.com/adoptium/temurin17-binaries/releases/download/jdk-17.0.16%2B8/OpenJDK17U-jdk_x64_linux_hotspot_17.0.16_8.tar.gz"
+    path: "/opt/jdk17"
+
+  "21":
+    url: "https://github.com/adoptium/temurin21-binaries/releases/download/jdk-21.0.2%2B13/OpenJDK21U-jdk_x64_linux_hotspot_21.0.2_13.tar.gz"
+    path: "/opt/jdk21"
