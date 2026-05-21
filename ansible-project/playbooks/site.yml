@@ -1,7 +1,73 @@
+---
 - name: Dynamic Dev Tools Setup
   hosts: all
-  become: yes
+  gather_facts: true
+  become: true
 
-  roles:
-    - jdk
-    - maven
+  tasks:
+
+    - name: Update all system packages
+      become: true
+      ansible.builtin.dnf:
+        name: "*"
+        state: latest
+        update_cache: yes
+      when: ansible_os_family == "RedHat"
+
+    - name: Ensure archive tools exist
+      become: true
+      package:
+        name:
+          - unzip
+          - zip
+        state: present
+        update_cache: yes
+      when: ansible_os_family == "Debian"
+
+    - name: Init install summary
+      set_fact:
+        install_summary: []
+
+    # -------------------
+    # INSTALL SEQUENTIALLY
+    # -------------------
+
+    # - name: Install JDK
+    #   include_role:
+    #     name: jdk
+
+    # - name: Install Maven
+    #   include_role:
+    #     name: maven
+
+    # - name: Install Tomcat
+    #   include_role:
+    #     name: tomcat
+
+    - name: Install Gradle
+      include_role:
+        name: gradle
+
+    - name: Install NVM
+      include_role:
+        name: nvm
+
+    - name: Install Node
+      include_role:
+        name: node
+
+    - name: Install PM2
+      include_role:
+        name: pm2
+
+    # - name: Install postgresql
+    #   include_role:
+    #     name: postgresql
+
+    # -------------------
+    # FINAL REPORT (ONLY ONCE)
+    # -------------------
+
+    - name: Send Telegram report
+      include_role:
+        name: telegram

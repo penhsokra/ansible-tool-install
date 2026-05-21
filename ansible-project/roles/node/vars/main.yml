@@ -1,0 +1,17 @@
+---
+npm_versions:
+  "18.20.8":
+    command: "nvm install 18.20.8"
+    path: "{{ install_dir }}/nvm/.npm"
+
+  "20.20.2":
+    command: "nvm install 20.20.2"
+    path: "{{ install_dir }}/nvm/.npm"
+
+  "22.22.3":
+    command: "nvm install 24.14.0"
+    path: "{{ install_dir }}/nvm/.npm"
+
+  "24.15.0":
+    command: "nvm install 24.15.0"
+    path: "{{ install_dir }}/nvm/.npm"

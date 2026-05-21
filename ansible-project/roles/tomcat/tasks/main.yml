@@ -1,0 +1,40 @@
+---
+- block:
+
+    - name: Install Tomcat
+      include_tasks: "../../common/tasks/installer_by_download.yml"
+      vars:
+        tool_name: "tomcat"
+        tool_url: "{{ tomcat_versions[tomcat_version].url }}"
+        tool_checksum_url: "{{ tomcat_versions[tomcat_version].checksum_url }}"
+        tool_checksum_algorithm: "{{ tomcat_versions[tomcat_version].checksum_algorithm }}"
+        tool_path: "{{ tomcat_versions[tomcat_version].path }}"
+        tool_bin_name: "catalina.sh"
+        tool_version_arg: "-version"
+        tool_version: "{{ tomcat_version }}"
+        tool_profile_content: |
+          alias tlog='tail -1000f {{ tomcat_versions[tomcat_version].path }}/logs/catalina.out'
+          alias tstart='sh {{ tomcat_versions[tomcat_version].path }}/bin/startup.sh'
+          alias tstop='sh {{ tomcat_versions[tomcat_version].path }}/bin/shutdown.sh'
+
+    - name: Set Tomcat status success
+      set_fact:
+        tomcat_status: "success"
+
+  rescue:
+
+    - name: Set Tomcat status failed
+      set_fact:
+        tomcat_status: "failed"
+
+  always:
+
+    - name: Add Tomcat to install summary
+      set_fact:
+        install_summary: >-
+          {{ install_summary + [ {
+            'tool': 'tomcat',
+            'version': tomcat_version,
+            'path': tomcat_versions[tomcat_version].path,
+            'status': tomcat_status | default('failed')
+          } ] }}

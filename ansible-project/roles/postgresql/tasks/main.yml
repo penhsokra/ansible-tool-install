@@ -1,0 +1,313 @@
+- block:
+
+    # ============================================================================
+    # PostgreSQL SOURCE INSTALL
+    # ============================================================================
+
+    # ----------------------------------------------------------------------------
+    # PACKAGES
+    # ----------------------------------------------------------------------------
+
+    - name: Install PostgreSQL packages on Rocky/RHEL
+      dnf:
+        name:
+          - selinux-policy-devel
+          - libicu-devel 
+          - openldap-devel 
+          - krb5-devel
+          - systemd-devel
+          - libxslt-devel
+          - lz4-devel
+          - tcl-devel 
+          - python3-devel 
+          - libuuid-devel 
+          - flex
+          - bison 
+          - zlib-devel 
+          - gcc
+          - perl 
+          - perl-devel 
+          - perl-ExtUtils-Embed
+          - openssl
+          - openssl-devel
+          - pam
+          - pam-devel 
+          - readline 
+          - readline-devel
+          - libxml2-devel
+          - wget 
+          - llvm
+          - llvm-devel
+          - llvm-libs
+          - clang
+          - glibc-common 
+          - glibc-locale-source
+          - glibc-langpack-en
+          - gettext
+          - gettext-devel
+        state: present
+      when: ansible_os_family == "RedHat"
+
+    - name: Install PostgreSQL packages on Ubuntu/Debian
+      apt:
+        name:
+          - build-essential
+          - perl
+          - libperl-dev
+          - libssl-dev
+          - libpam0g-dev
+          - libreadline-dev
+          - libxml2-dev
+          - zlib1g-dev
+          - gettext
+          - llvm
+          - llvm-dev
+          - llvm-tools
+          - clang
+        state: present
+        update_cache: yes
+      when: ansible_os_family == "Debian"
+
+    # ----------------------------------------------------------------------------
+    # USER
+    # ----------------------------------------------------------------------------
+
+    - name: Create postgres user
+      user:
+        name: "{{ pg_user }}"
+        shell: /bin/bash
+        create_home: yes
+
+    # ----------------------------------------------------------------------------
+    # DIRECTORIES
+    # ----------------------------------------------------------------------------
+
+    - name: Create PostgreSQL directories
+      file:
+        path: "{{ item }}"
+        state: directory
+        owner: "{{ pg_user }}"
+        group: "{{ pg_user }}"
+        mode: "0700"
+      loop:
+        - "/usr/postgresql"
+        - "{{ pg_base_dir }}"
+        - "{{ pg_prefix }}"
+        - "{{ pg_data }}"
+        - "{{ pg_log }}"
+        - "{{ pg_backup }}"
+
+    # ----------------------------------------------------------------------------
+    # LIMITS
+    # ----------------------------------------------------------------------------
+
+    - name: Configure postgres limits
+      blockinfile:
+        path: /etc/security/limits.conf
+        marker: "# {mark} POSTGRESQL LIMITS"
+        block: |
+          {{ pg_user }} soft nproc 65536
+          {{ pg_user }} hard nproc 65536
+          {{ pg_user }} soft nofile 65536
+          {{ pg_user }} hard nofile 65536
+
+    # ----------------------------------------------------------------------------
+    # DOWNLOAD
+    # ----------------------------------------------------------------------------
+
+    - name: Download PostgreSQL source
+      get_url:
+        url: "{{ pg_url }}"
+        dest: "/tmp/{{ pg_tarball }}"
+        mode: "0644"
+
+    # ----------------------------------------------------------------------------
+    # EXTRACT
+    # ----------------------------------------------------------------------------
+
+    - name: Extract PostgreSQL source
+      unarchive:
+        src: "/tmp/{{ pg_tarball }}"
+        dest: /tmp
+        remote_src: yes
+
+    # ----------------------------------------------------------------------------
+    # CONFIGURE
+    # ----------------------------------------------------------------------------
+
+    - name: Configure PostgreSQL
+      command: >
+        ./configure
+        --prefix={{ pg_prefix }}
+        --enable-nls
+        --with-perl
+        --with-libxml
+        --with-pam
+        --with-openssl
+        --with-llvm
+        --with-systemd
+        --with-ldap
+        --with-gssapi
+        --with-tcl
+        --with-python
+        --with-icu
+        --with-lz4
+      args:
+        chdir: "/tmp/postgresql-{{ pg_version }}"
+
+    # ----------------------------------------------------------------------------
+    # BUILD
+    # ----------------------------------------------------------------------------
+
+    - name: Build PostgreSQL
+      command: make
+      args:
+        chdir: "/tmp/postgresql-{{ pg_version }}"
+
+    # ----------------------------------------------------------------------------
+    # INSTALL
+    # ----------------------------------------------------------------------------
+    - name: Check postgres binary exists
+      stat:
+        path: "{{ pg_prefix }}/bin/postgres"
+      register: pg_installed
+
+    - name: Install PostgreSQL
+      command: make install
+      args:
+        chdir: "/tmp/postgresql-{{ pg_version }}"
+      when: not pg_installed.stat.exists
+
+    # ----------------------------------------------------------------------------
+    # CONTRIB
+    # ----------------------------------------------------------------------------
+
+    - name: Build PostgreSQL contrib
+      command: make
+      args:
+        chdir: "/tmp/postgresql-{{ pg_version }}/contrib"
+
+    - name: Install PostgreSQL contrib
+      command: make install
+      args:
+        chdir: "/tmp/postgresql-{{ pg_version }}/contrib"
+
+    # ----------------------------------------------------------------------------
+    # PROFILE
+    # ----------------------------------------------------------------------------
+
+    - name: Configure postgres profile (.bash_profile)
+      copy:
+        dest: "/home/{{ pg_user }}/.bash_profile"
+        owner: "{{ pg_user }}"
+        group: "{{ pg_user }}"
+        mode: "0644"
+        content: |
+          PATH={{ pg_prefix }}/bin:$PATH:$HOME/bin:/usr/bin:/usr/lib/
+          export PATH
+          export PGHOME={{ pg_prefix }}
+          export PGLIB=$PGHOME/lib
+          export LD_LIBRARY_PATH=$PGLIB
+
+          export PGDATA={{ pg_data }}
+          export PGALOG={{ pg_log }}
+          export PGRBAK={{ pg_backup }}
+
+          alias pgcfg='vi $PGDATA/postgresql.conf'
+          alias pgconn='psql -p {{ pg_port }} -U {{ pg_user }} -d postgres'
+          alias pgstart='pg_ctl -D $PGDATA start'
+          alias pgstop='pg_ctl -D $PGDATA -m fast stop'
+          alias plog='tail -100f $PGALOG/$(ls -Art $PGALOG | tail -n 1)'
+      when: ansible_os_family == "RedHat"
+
+    - name: Configure postgres profile (.profile)
+      copy:
+        dest: "/home/{{ pg_user }}/.profile"
+        owner: "{{ pg_user }}"
+        group: "{{ pg_user }}"
+        mode: "0644"
+        content: |
+          PATH={{ pg_prefix }}/bin:$PATH:$HOME/bin:/usr/bin:/usr/lib/
+          export PATH
+          export PGHOME={{ pg_prefix }}
+          export PGLIB=$PGHOME/lib
+          export LD_LIBRARY_PATH=$PGLIB
+
+          export PGDATA={{ pg_data }}
+          export PGALOG={{ pg_log }}
+          export PGRBAK={{ pg_backup }}
+
+          alias pgcfg='vi $PGDATA/postgresql.conf'
+          alias pgconn='psql -p {{ pg_port }} -U {{ pg_user }} -d postgres'
+          alias pgstart='pg_ctl -D $PGDATA start'
+          alias pgstop='pg_ctl -D $PGDATA -m fast stop'
+          alias plog='tail -100f $PGALOG/$(ls -Art $PGALOG | tail -n 1)'
+      when: ansible_os_family == "Debian"
+
+    # ----------------------------------------------------------------------------
+    # INITDB
+    # ----------------------------------------------------------------------------
+    - name: Check initdb
+      stat:
+        path: "{{ pg_data }}/PG_VERSION"
+      register: pg_init
+
+    - name: Create password file
+      copy:
+        dest: /tmp/postgres_pw
+        content: "{{ postgres_password }}\n"
+        owner: "{{ pg_user }}"
+        group: "{{ pg_user }}"
+        mode: '0600'
+
+    - name: Initialize PostgreSQL
+      command: >
+        sudo -u postgres {{ pg_prefix }}/bin/initdb
+        -D {{ pg_data }}
+        -U {{ pg_user }}
+        --pwfile=/tmp/postgres_pw
+        --auth=scram-sha-256
+      when: not pg_init.stat.exists
+    
+    - name: Remove password file
+      file:
+        path: /tmp/postgres_pw
+        state: absent
+
+    # ----------------------------------------------------------------------------
+    # START
+    # ----------------------------------------------------------------------------
+    - name: Start PostgreSQL
+      command: >
+        sudo -u postgres {{ pg_prefix }}/bin/pg_ctl
+        -D {{ pg_data }}
+        start
+
+    # ==========================
+    # ✅ SUCCESS
+    # ==========================
+    - name: Set PostgreSQL status success
+      set_fact:
+        pg_status: "success"
+
+  rescue:
+    # ==========================
+    # ❌ FAILED
+    # ==========================
+    - name: Set PostgreSQL status failed
+      set_fact:
+        pg_status: "failed"
+
+  always:
+    # ==========================
+    # 📋 SUMMARY
+    # ==========================
+    - name: Add PostgreSQL to install summary
+      set_fact:
+        install_summary: >-
+          {{ install_summary + [ {
+            'tool': 'postgresql',
+            'version': pg_version,
+            'path': pg_prefix,
+            'status': pg_status | default('failed')
+          } ] }}

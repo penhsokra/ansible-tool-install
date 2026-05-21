@@ -1,0 +1,40 @@
+---
+- name: Build Telegram message
+  set_fact:
+    telegram_message: |
+      🚀 Deployment Completed
+      ─────────────────────────────
+
+      🖥 Host: {{ inventory_hostname }}
+      
+      INSTALLATION SUMMARY
+      ────────────────────────────────────────────
+
+      Tool       Version     Path                 
+      ────────────────────────────────────────────
+      {% if install_summary is defined and install_summary | length > 0 %}
+      {% for item in install_summary %}
+      {{ "%-12s %-12s %s %s" | format(
+          item.tool,
+          item.version | default('N/A'),
+          item.path | default('N/A'),
+          (item.status == 'success') | ternary(' ✅', ' ❌')
+      ) }}
+      {% endfor %}
+
+      {% else %}
+      ⚠️ No install summary found
+      {% endif %}
+      ────────────────────────────────────────────
+
+      ⏱ Time: {{ ansible_date_time.iso8601 }}
+
+- name: Send Telegram message
+  uri:
+    url: "https://api.telegram.org/bot{{ telegram_bot_token }}/sendMessage"
+    method: POST
+    body_format: form-urlencoded
+    body:
+      chat_id: "{{ telegram_chat_id }}"
+      text: "{{ telegram_message }}"
+    status_code: 200

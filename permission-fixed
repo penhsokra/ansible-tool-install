@@ -1,0 +1,13 @@
+# 1. Copy the fresh keys from your project to the .ssh folder
+cp ~/ansible-tool-install/ansible-project/server_key/*_server_key ~/.ssh/server_key/
+
+# 2. Fix line endings, strip hidden trailing spaces, and force a blank line at the end
+sed -i 's/\r$//' ~/.ssh/server_key/*_server_key
+sed -i 's/[[:space:]]*$//' ~/.ssh/server_key/*_server_key
+sed -i -e '$a\' ~/.ssh/server_key/*_server_key
+
+# 3. Secure the permissions
+chmod 600 ~/.ssh/server_key/*_server_key
+
+# 4. Verify the key isn't corrupted (this should print a fingerprint, not an error!)
+ssh-keygen -l -f ~/.ssh/server_key/sit_server_key

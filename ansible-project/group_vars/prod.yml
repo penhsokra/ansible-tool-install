@@ -1,4 +1,0 @@
----
-env: PROD
-jdk_version: "17"
-maven_version: "3.9.11"

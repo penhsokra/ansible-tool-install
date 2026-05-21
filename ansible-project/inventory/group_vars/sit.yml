@@ -1,0 +1,7 @@
+---
+env: SIT
+
+# Connection settings
+#ansible_host: 35.253.193.253
+ansible_host: 34.121.4.241
+ansible_ssh_private_key_file: ~/.ssh/server_key/sit_server_key

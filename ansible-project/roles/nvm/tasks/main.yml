@@ -1,0 +1,48 @@
+---
+- block:
+
+    # ==========================
+    # 📦 INSTALL NVM
+    # ==========================
+    - name: Install NVM
+      include_tasks: "../../common/tasks/installer_by_command.yml"
+      vars:
+        tool_name: "nvm"
+        tool_path: "{{ nvm_versions[nvm_version].path }}"
+        tool_environment:
+          NVM_DIR: "{{ nvm_versions[nvm_version].path }}"
+        tool_install_command: |
+          {{ nvm_versions[nvm_version].command }}
+        tool_profile_content: |
+          export NVM_DIR="{{ nvm_versions[nvm_version].path }}"
+          [ -s "$NVM_DIR/nvm.sh" ] && \. "$NVM_DIR/nvm.sh"  # This loads nvm
+        tool_creates: "{{ nvm_versions[nvm_version].path }}/nvm.sh"
+    
+    # ==========================
+    # ✅ SUCCESS
+    # ==========================
+    - name: Set NVM status success
+      set_fact:
+        nvm_status: "success"
+
+  rescue:
+    # ==========================
+    # ❌ FAILED
+    # ==========================
+    - name: Set NVM status failed
+      set_fact:
+        nvm_status: "failed"
+
+  always:
+    # ==========================
+    # 📋 SUMMARY
+    # ==========================
+    - name: Add NVM to install summary
+      set_fact:
+        install_summary: >-
+          {{ install_summary + [ {
+            'tool': 'nvm',
+            'version': nvm_version,
+            'path': nvm_versions[nvm_version].path,
+            'status': nvm_status | default('failed')
+          } ] }}

@@ -1,0 +1,46 @@
+---
+- block:
+
+    # ==========================
+    # 📦 INSTALL Node
+    # ==========================
+    - name: Install Node
+      include_tasks: "../../common/tasks/installer_by_command.yml"
+      vars:
+        tool_name: "nodejs"
+        tool_path: "{{ npm_versions[npm_version].path }}"
+        tool_install_command: |
+          export NVM_DIR="{{ install_dir }}/nvm/.nvm"
+          [ -s "$NVM_DIR/nvm.sh" ] && . "$NVM_DIR/nvm.sh"
+          {{ npm_versions[npm_version].command }}
+        tool_profile_content: |
+          export NPM_CONFIG_CACHE="{{ npm_versions[npm_version].path }}"
+
+    # ==========================
+    # ✅ SUCCESS
+    # ==========================
+    - name: Set npm status success
+      set_fact:
+        npm_status: "success"
+
+  rescue:
+    # ==========================
+    # ❌ FAILED
+    # ==========================
+    - name: Set npm status failed
+      set_fact:
+        npm_status: "failed"
+
+  always:
+    # ==========================
+    # 📋 SUMMARY
+    # ==========================
+    - name: Add npm to install summary
+      set_fact:
+        install_summary: >-
+          {{ install_summary + [ {
+            'tool': 'npm',
+            'version': npm_version,
+            'path': npm_versions[npm_version].path,
+            'status': npm_status | default('failed')
+          } ] }}

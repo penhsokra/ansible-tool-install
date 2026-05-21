@@ -1,0 +1,3 @@
+---
+# Defaults for tomcat role
+tomcat_version: "11.0.9"

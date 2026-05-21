@@ -1,0 +1,99 @@
+---
+- name: Create {{ tool_name }} directory
+  file:
+    path: "{{ tool_path }}"
+    state: directory
+    mode: '0755'
+    owner: "{{ was_user }}"
+    group: "{{ was_user }}"
+
+# ==========================
+# 🔐 FETCH CHECKSUM
+# ==========================
+- name: Fetch official checksum
+  uri:
+    url: "{{ tool_checksum_url }}"
+    return_content: yes
+  register: checksum_file
+  retries: 3
+  delay: 5
+  until: checksum_file is succeeded
+
+- name: Extract checksum value
+  set_fact:
+    tool_checksum: "{{ checksum_file.content.split()[0] }}"
+
+# ==========================
+# 📦 DOWNLOAD
+# ==========================
+- name: Download {{ tool_name }}
+  get_url:
+    url: "{{ tool_url }}"
+    dest: "/tmp/{{ tool_name }}-{{ tool_version }}.{{ tool_archive_type | default('tar.gz') }}"
+    mode: '0644'
+    checksum: "{{ tool_checksum_algorithm | default(omit) }}:{{ tool_checksum | default(omit) }}"
+  register: download_result
+  retries: 3
+  delay: 5
+  until: download_result is succeeded
+
+# ==========================
+# 📂 EXTRACT
+# ==========================
+- name: Extract {{ tool_name }}
+  unarchive:
+    src: "/tmp/{{ tool_name }}-{{ tool_version }}.{{ tool_archive_type | default('tar.gz') }}"
+    dest: "{{ tool_path }}"
+    remote_src: yes
+    extra_opts:
+      - --strip-components=1
+  when: tool_archive_type | default('tar.gz') == 'tar.gz'
+
+- name: Extract {{ tool_name }} (zip)
+  unarchive:
+    src: "/tmp/{{ tool_name }}-{{ tool_version }}.zip"
+    dest: "{{ tool_path }}"
+    remote_src: yes
+  when: tool_archive_type | default('tar.gz') == 'zip'
+
+# ==========================
+# 🔧 FIX OWNERSHIP
+# ==========================
+- name: Fix ownership
+  file:
+    path: "{{ tool_path }}"
+    owner: "{{ was_user }}"
+    group: "{{ was_user }}"
+    recurse: yes
+
+# ==========================
+# 🌍 ENVIRONMENT
+# ==========================
+- name: Configure environment
+  blockinfile:
+    path: "/home/{{ was_user }}/.profile"
+    marker: "# {mark} ANSIBLE MANAGED BLOCK FOR {{ tool_name | upper }}"
+    create: yes
+    content: |
+      {% if tool_profile_content is defined %}
+      {{ tool_profile_content }}
+      {% endif %}
+  when: ansible_os_family == "Debian"
+
+- name: Configure environment
+  blockinfile:
+    path: "/home/{{ was_user }}/.bash_profile"
+    marker: "# {mark} ANSIBLE MANAGED BLOCK FOR {{ tool_name | upper }}"
+    create: yes
+    content: |
+      {% if tool_profile_content is defined %}
+      {{ tool_profile_content }}
+      {% endif %}
+  when: ansible_os_family == "RedHat"
+# ==========================
+# 🧹 CLEANUP
+# ==========================
+# - name: Remove archive
+#   file:
+#     path: "/tmp/{{ tool_name }}-{{ tool_version }}.tar.gz"
+#     state: absent

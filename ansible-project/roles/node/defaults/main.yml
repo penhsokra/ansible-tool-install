@@ -1,0 +1,3 @@
+---
+# Defaults for nvm role
+npm_versions: "24.15.0"

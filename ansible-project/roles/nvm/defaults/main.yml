@@ -1,0 +1,3 @@
+---
+# Defaults for nvm role
+nvm_version: "0.40.4"

@@ -1,0 +1,6 @@
+---
+env: PROD
+
+# Connection settings
+ansible_host: 34.29.154.33
+ansible_ssh_private_key_file: ~/.ssh/server_key/prod_server_key

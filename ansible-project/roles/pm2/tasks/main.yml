@@ -1,0 +1,46 @@
+- block:
+
+    # ==========================
+    # 📦 INSTALL PM2
+    # ==========================
+    - name: Install pm2
+      include_tasks: "../../common/tasks/installer_by_command.yml"
+      vars:
+        tool_name: "pm2"
+        tool_path: "{{ pm2_versions[pm2_version].path }}"
+        tool_install_command: |
+          export NVM_DIR="{{ install_dir }}/nvm/.nvm"
+          [ -s "$NVM_DIR/nvm.sh" ] && . "$NVM_DIR/nvm.sh"
+
+          {{ pm2_versions[pm2_version].command }}
+        tool_profile_content: |
+          export PM2_HOME="{{ pm2_versions[pm2_version].path }}"
+
+    # ==========================
+    # ✅ SUCCESS
+    # ==========================
+    - name: Set PM2 status success
+      set_fact:
+        pm2_status: "success"
+
+  rescue:
+    # ==========================
+    # ❌ FAILED
+    # ==========================
+    - name: Set PM2 status failed
+      set_fact:
+        pm2_status: "failed"
+
+  always:
+    # ==========================
+    # 📋 SUMMARY
+    # ==========================
+    - name: Add PM2 to install summary
+      set_fact:
+        install_summary: >-
+          {{ install_summary + [ {
+            'tool': 'pm2',
+            'version': pm2_version,
+            'path': pm2_versions[pm2_version].path,
+            'status': pm2_status | default('failed')
+          } ] }}

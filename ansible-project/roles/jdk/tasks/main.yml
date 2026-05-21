@@ -1,62 +1,37 @@
 ---
-- name: Set JDK variables dynamically
-  set_fact:
-    jdk_url: "{{ jdk_versions[jdk_version].url }}"
-    jdk_path: "{{ jdk_versions[jdk_version].path }}"
+- block:
 
-- name: Check if Java binary already exists
-  stat:
-    path: "{{ jdk_path }}/bin/java"
-  register: jdk_bin_stat
+    - name: Install JDK
+      include_tasks: "../../common/tasks/installer_by_download.yml"
+      vars:
+        tool_name: "jdk"
+        tool_url: "{{ jdk_versions[jdk_version].url }}"
+        tool_checksum_url: "{{ jdk_versions[jdk_version].checksum_url }}"
+        tool_checksum_algorithm: "{{ jdk_versions[jdk_version].checksum_algorithm }}"
+        tool_path: "{{ jdk_versions[jdk_version].path }}"
+        tool_profile_content: |
+          export JAVA_HOME="{{ jdk_versions[jdk_version].path }}"
+          export PATH=$JAVA_HOME/bin:$PATH
+        tool_bin_name: "java"
+        tool_version_arg: "-version"
+        tool_version: "{{ jdk_version }}"
 
-- name: Wipe existing directory if binary is missing (ensures clean install)
-  file:
-    path: "{{ jdk_path }}"
-    state: absent
-  when: not jdk_bin_stat.stat.exists
+    - name: Set JDK status success
+      set_fact:
+        jdk_status: "success"
 
-- name: Create JDK directory
-  file:
-    path: "{{ jdk_path }}"
-    state: directory
+  rescue:
+    - name: Set JDK status failed
+      set_fact:
+        jdk_status: "failed"
 
-- name: Download JDK
-  get_url:
-    url: "{{ jdk_url }}"
-    dest: "/tmp/jdk.tar.gz"
-
-- name: Extract JDK
-  unarchive:
-    src: "/tmp/jdk.tar.gz"
-    dest: "{{ jdk_path }}"
-    remote_src: yes
-    extra_opts:
-      - --strip-components=1
-
-- name: Set System-Wide JAVA_HOME and PATH
-  copy:
-    dest: /etc/profile.d/jdk.sh
-    content: |
-      export JAVA_HOME={{ jdk_path }}
-      export PATH=$PATH:{{ jdk_path }}/bin
-    mode: '0644'
-
-- name: Clean up temporary downloaded archive
-  file:
-    path: "/tmp/jdk.tar.gz"
-    state: absent
-
-- name: Verify JDK Installation
-  command: "{{ jdk_path }}/bin/java -version"
-  register: java_verify
-  changed_when: false
-
-- name: Display JDK installation status
-  debug:
-    msg: "JDK Installation verified successfully. Version output: {{ java_verify.stderr }}"
-
-- name: Remove legacy user-specific JAVA_HOME configurations
-  blockinfile:
-    path: /home/penhsokra/.profile
-    state: absent
-  ignore_errors: yes
+  always:
+    - name: Add JDK to install summary
+      set_fact:
+        install_summary: >-
+          {{ install_summary + [ {
+            'tool': 'jdk',
+            'version': jdk_version,
+            'path': jdk_versions[jdk_version].path,
+            'status': jdk_status | default('failed')
+          } ] }}

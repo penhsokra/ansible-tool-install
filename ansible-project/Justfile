@@ -38,3 +38,8 @@ deploy-all *args:
     just deploy-prod {{args}} & \
     wait
 
+
+
+# just deploy-uat -v
+# just deploy-uat -vvv
+# just deploy-uat --tags jdk

@@ -1,59 +1,39 @@
 ---
-- name: Set Maven variables dynamically
-  set_fact:
-    maven_url: "{{ maven_versions[maven_version].url }}"
-    maven_path: "{{ maven_versions[maven_version].path }}"
+- block:
 
-- name: Check if Maven binary already exists
-  stat:
-    path: "{{ maven_path }}/bin/mvn"
-  register: maven_bin_stat
+    - name: Install Maven
+      include_tasks: "../../common/tasks/installer_by_download.yml"
+      vars:
+        tool_name: "maven"
+        tool_url: "{{ maven_versions[maven_version].url }}"
+        tool_checksum_url: "{{ maven_versions[maven_version].checksum_url }}"
+        tool_checksum_algorithm: "{{ maven_versions[maven_version].checksum_algorithm }}"
+        tool_path: "{{ maven_versions[maven_version].path }}"
+        tool_profile_content: |
+          export MAVEN_HOME="{{ maven_versions[maven_version].path }}"
+          export PATH=$MAVEN_HOME/bin:$PATH
+        tool_bin_name: "mvn"
+        tool_version_arg: "-version"
+        tool_version: "{{ maven_version }}"
 
-- name: Wipe existing directory if binary is missing (ensures clean install)
-  file:
-    path: "{{ maven_path }}"
-    state: absent
-  when: not maven_bin_stat.stat.exists
+    - name: Set Maven status success
+      set_fact:
+        maven_status: "success"
 
-- name: Create Maven directory
-  file:
-    path: "{{ maven_path }}"
-    state: directory
+  rescue:
 
-- name: Download Maven
-  get_url:
-    url: "{{ maven_url }}"
-    dest: /tmp/maven.tar.gz
+    - name: Set Maven status failed
+      set_fact:
+        maven_status: "failed"
 
-- name: Extract Maven using tar command
-  command: "tar -xzf /tmp/maven.tar.gz -C {{ maven_path }} --strip-components=1"
-  args:
-    creates: "{{ maven_path }}/bin/mvn"
+  always:
 
-- name: Set System-Wide MAVEN_HOME and PATH
-  copy:
-    dest: /etc/profile.d/maven.sh
-    content: |
-      export MAVEN_HOME={{ maven_path }}
-      export PATH=$PATH:{{ maven_path }}/bin
-    mode: '0644'
-
-- name: Clean up temporary downloaded archive
-  file:
-    path: "/tmp/maven.tar.gz"
-    state: absent
-
-- name: Verify Maven Installation
-  command: "{{ maven_path }}/bin/mvn -version"
-  register: mvn_verify
-  changed_when: false
-
-- name: Display Maven installation status
-  debug:
-    msg: "Maven Installation verified successfully. Version output: {{ mvn_verify.stdout }}"
-
-- name: Remove legacy user-specific MAVEN_HOME configurations
-  blockinfile:
-    path: /home/penhsokra/.profile
-    state: absent
-  ignore_errors: yes
+    - name: Add Maven to install summary
+      set_fact:
+        install_summary: >-
+          {{ install_summary + [ {
+            'tool': 'maven',
+            'version': maven_version,
+            'path': maven_versions[maven_version].path,
+            'status': maven_status | default('failed')
+          } ] }}

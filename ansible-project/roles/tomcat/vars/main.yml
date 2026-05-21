@@ -1,0 +1,30 @@
+tomcat_versions:
+  "7.0.99":
+    url: "https://archive.apache.org/dist/tomcat/tomcat-7/v7.0.99/bin/apache-tomcat-7.0.99.tar.gz"
+    checksum_url: "https://archive.apache.org/dist/tomcat/tomcat-7/v7.0.99/bin/apache-tomcat-7.0.99.tar.gz.sha512"
+    checksum_algorithm: "sha512"
+    path: "{{ install_dir }}/tomcat/tomcat-7.0.99"
+
+  "8.5.99":
+    url: "https://archive.apache.org/dist/tomcat/tomcat-8/v8.5.99/bin/apache-tomcat-8.5.99.tar.gz"
+    checksum_url: "https://archive.apache.org/dist/tomcat/tomcat-8/v8.5.99/bin/apache-tomcat-8.5.99.tar.gz.sha512"
+    checksum_algorithm: "sha512"
+    path: "/opt/tomcat-8.5.99"
+
+  "9.0.100":
+    url: "https://archive.apache.org/dist/tomcat/tomcat-9/v9.0.100/bin/apache-tomcat-9.0.100.tar.gz"
+    checksum_url: "https://archive.apache.org/dist/tomcat/tomcat-9/v9.0.100/bin/apache-tomcat-9.0.100.tar.gz.sha512"
+    checksum_algorithm: "sha512"
+    path: "{{ install_dir }}/tomcat/tomcat-9.0.100"
+
+  "10.1.9":
+    url: "https://archive.apache.org/dist/tomcat/tomcat-10/v10.1.9/bin/apache-tomcat-10.1.9.tar.gz"
+    checksum_url: "https://archive.apache.org/dist/tomcat/tomcat-10/v10.1.9/bin/apache-tomcat-10.1.9.tar.gz.sha512"
+    checksum_algorithm: "sha512"
+    path: "{{ install_dir }}/tomcat/tomcat-10.1.9"
+
+  "11.0.9":
+    url: "https://archive.apache.org/dist/tomcat/tomcat-11/v11.0.9/bin/apache-tomcat-11.0.9.tar.gz"
+    checksum_url: "https://archive.apache.org/dist/tomcat/tomcat-11/v11.0.9/bin/apache-tomcat-11.0.9.tar.gz.sha512"
+    checksum_algorithm: "sha512"
+    path: "{{ install_dir }}/tomcat/tomcat-11.0.9"

@@ -1,0 +1,39 @@
+---
+# Global connection settings
+ansible_user: "penhsokra"
+ansible_python_interpreter: "/usr/bin/python3"
+
+
+
+
+
+# owner settings for installed tools
+was_user: "penhsokra"
+web_user: "penhsokra"
+pg_user: "postgres"
+
+
+
+
+
+# Global tool installation settings
+install_dir: "/DATA/projects/tools"
+
+
+
+# Default tool versions
+jdk_version: "25.0.3"
+maven_version: "3.9.11"
+tomcat_version: "11.0.9"
+gradle_version: "9.4.0"
+nvm_version: "0.40.4"
+npm_version: "24.15.0"
+pm2_version: "latest"
+pg_version: "15.13"
+
+
+
+
+# Telegram info
+telegram_bot_token: "8618472117:AAF6bZhs3CUoo3lqrz3MKBNR3z0poiPuvuk"
+telegram_chat_id: "594303439"

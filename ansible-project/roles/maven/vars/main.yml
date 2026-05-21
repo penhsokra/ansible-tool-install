@@ -2,8 +2,12 @@
 maven_versions:
   "3.8.8":
     url: "https://archive.apache.org/dist/maven/maven-3/3.8.8/binaries/apache-maven-3.8.8-bin.tar.gz"
-    path: "/opt/maven3.8"
+    checksum_url: "https://archive.apache.org/dist/maven/maven-3/3.8.8/binaries/apache-maven-3.8.8-bin.tar.gz.sha512"
+    checksum_algorithm: "sha512"
+    path: "{{ install_dir }}/maven/maven-3.8.8"
 
   "3.9.11":
     url: "https://archive.apache.org/dist/maven/maven-3/3.9.11/binaries/apache-maven-3.9.11-bin.tar.gz"
-    path: "/opt/maven3.9"
+    checksum_url: "https://archive.apache.org/dist/maven/maven-3/3.9.11/binaries/apache-maven-3.9.11-bin.tar.gz.sha512"
+    checksum_algorithm: "sha512"
+    path: "{{ install_dir }}/maven/maven-3.9.11"

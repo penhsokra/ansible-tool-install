@@ -1,0 +1,74 @@
+---
+# ==========================
+# 📁 CREATE DIRECTORY
+# ==========================
+
+- name: Create {{ tool_name }} directory
+  file:
+    path: "{{ tool_path }}"
+    state: directory
+    mode: '0755'
+    owner: "{{ was_user }}"
+    group: "{{ was_user }}"
+  when: tool_path is defined
+
+# ==========================
+# 📦 INSTALL VIA COMMAND
+# ==========================
+
+- name: Run install command for {{ tool_name }}
+  shell: |
+    {{ tool_install_command }}
+  args:
+    executable: /bin/bash
+    creates: "{{ tool_creates | default(omit) }}"
+  environment: "{{ tool_environment | default({}) }}"
+  register: install_result
+  retries: 3
+  delay: 5
+  until: install_result is succeeded
+
+# ==========================
+# 🌍 ENVIRONMENT
+# ==========================
+
+- name: Configure environment
+  blockinfile:
+    path: "/home/{{ was_user }}/.profile"
+    marker: "# {mark} MANAGED BLOCK FOR {{ tool_name | upper }}"
+    create: yes
+    content: |
+      {% if tool_profile_content is defined %}
+      {{ tool_profile_content }}
+      {% endif %}
+  when: ansible_os_family == "Debian" and tool_profile_content is defined
+
+- name: Configure environment
+  blockinfile:
+    path: "/home/{{ was_user }}/.bash_profile"
+    marker: "# {mark}  MANAGED BLOCK FOR {{ tool_name | upper }}"
+    create: yes
+    content: |
+      {% if tool_profile_content is defined %}
+      {{ tool_profile_content }}
+      {% endif %}
+  when: ansible_os_family == "RedHat" and tool_profile_content is defined
+
+# ==========================
+# 🔍 VERIFY INSTALLATION
+# ==========================
+
+- name: Verify {{ tool_name }}
+  shell: |
+    source /home/{{ was_user }}/.profile
+    {{ tool_verify_command }}
+  args:
+    executable: /bin/bash
+  register: verify_result
+  changed_when: false
+  when: tool_verify_command is defined
+
+- name: Show {{ tool_name }} version
+  debug:
+    msg: "{{ verify_result.stdout | default(verify_result.stderr) }}"
+  when: tool_verify_command is defined

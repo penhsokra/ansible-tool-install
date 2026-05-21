@@ -1,0 +1,24 @@
+---
+pg_version: "15.13"
+pg_port: "54311"
+
+
+pg_user: "postgres"
+postgres_password: "postgres"
+
+pg_prefix: "/usr/postgresql/{{ pg_version }}"
+project_dir: "/DATA/projects"
+
+pg_base_dir: "{{ project_dir }}/pgdata"
+pg_data: "{{ pg_base_dir }}/data"
+pg_log: "{{ pg_base_dir }}/alog"
+pg_backup: "{{ pg_base_dir }}/backup"
+
+#Example:
+# /DATA/projects_name/pgdata/data
+# /DATA/projects_name/pgdata/alog
+# /DATA/projects_name/pgdata/backup
+
+
+pg_tarball: "postgresql-{{ pg_version }}.tar.gz"
+pg_url: "https://ftp.postgresql.org/pub/source/v{{ pg_version }}/{{ pg_tarball }}"

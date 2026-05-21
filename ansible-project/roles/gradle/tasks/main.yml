@@ -1,0 +1,41 @@
+---
+- block:
+
+    - name: Install Gradle
+      include_tasks: "../../common/tasks/installer_by_download.yml"
+      vars:
+        tool_name: "gradle"
+        tool_archive_type: zip
+        tool_url: "{{ gradle_versions[gradle_version].url }}"
+        tool_checksum_url: "{{ gradle_versions[gradle_version].checksum_url }}"
+        tool_checksum_algorithm: "{{ gradle_versions[gradle_version].checksum_algorithm }}"
+        tool_path: "{{ gradle_versions[gradle_version].path }}"
+        tool_profile_content: |
+          export GRADLE_HOME="{{ gradle_versions[gradle_version].path }}/gradle-{{ gradle_version }}"
+          export GRADLE_USER_HOME="{{ install_dir }}/gradle/.gradle_cache"
+          export PATH=${GRADLE_HOME}/bin:${PATH}
+        tool_bin_name: "gradle"
+        tool_version_arg: "-version"
+        tool_version: "{{ gradle_version }}"
+
+    - name: Set Gradle status success
+      set_fact:
+        gradle_status: "success"
+
+  rescue:
+
+    - name: Set Gradle status failed
+      set_fact:
+        gradle_status: "failed"
+
+  always:
+
+    - name: Add Gradle to install summary
+      set_fact:
+        install_summary: >-
+          {{ install_summary + [ {
+            'tool': 'gradle',
+            'version': gradle_version,
+            'path': gradle_versions[gradle_version].path,
+            'status': gradle_status | default('failed')
+          } ] }}
